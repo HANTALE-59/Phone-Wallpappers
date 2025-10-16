@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallpapers Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .folder-filter {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .folder-btn {
+            padding: 10px 20px;
+            border: 2px solid white;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .folder-btn:hover,
+        .folder-btn.active {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .image-container {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background: #f0f0f0;
+            position: relative;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .image-info {
+            padding: 15px;
+        }
+
+        .image-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .image-folder {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 50px;
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 50px;
+            display: none;
+        }
+
+        /* Modal pour agrandir les images */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 15px 30px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖼️ Wallpapers Gallery</h1>
+            <p class="subtitle">Collection de fonds d'écran</p>
+        </header>
+
+        <div class="filters">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Rechercher un wallpaper...">
+            <div class="folder-filter" id="folderFilter">
+                <button class="folder-btn active" data-folder="all">Tous</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">Chargement des wallpapers...</div>
+        <div class="no-results" id="noResults">Aucun wallpaper trouvé</div>
+        <div class="gallery" id="gallery"></div>
+    </div>
+
+    <!-- Modal pour agrandir les images -->
+    <div class="modal" id="modal">
+        <span class="modal-close" id="modalClose">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div class="modal-info" id="modalInfo"></div>
+    </div>
+
+    <script>
+        // Configuration des dossiers et images
+        const wallpapers = [
+            { folder: 'root', images: [
+                '.trashed-1760651833-aimchillin-20250823-0010.jpg',
+                '.trashed-1760651857-aimchillin-20250823-0005.jpg',
+                '.trashed-1760651857-aimchillin-20250823-0007.jpg',
+                '.trashed-1760651857-aimchillin-20250823-0008.jpg',
+                '.trashed-1760651857-aimchillin-20250823-0009.jpg',
+                '.trashed-1760651858-aimchillin-20250823-0001.jpg',
+                '.trashed-1760651858-aimchillin-20250823-0002.jpg',
+                '.trashed-1760651872-aimchillin-20250823-0003.jpg',
+                '.trashed-1760651879-aimchillin-20250823-0006.jpg',
+                '.trashed-1760651897-_artsopolis-20250822-0009.jpg',
+                '.trashed-1760652110-_artsopolis-20250822-0005.jpg',
+                '0PuSwi8.png',
+                '4k-Arch-Planet.png',
+                '4k.animescape-20250824-0001.jpg',
+                '4k.animescape-20250824-0002.jpg',
+                '8GFYbPF.png',
+                'ArchWaveBlack.png',
+                'ArchWaveMono.png',
+                'ArchWaveMonoInverted.png',
+                'EU90MsM.jpg',
+                'Ecn0qEh.jpeg',
+                'EcwKePa.jpeg',
+                'IMG-20250820-WA0013.jpg',
+                'PwVfvIk.png',
+                'Vm83FeC.png',
+                'XCx0bJS.jpeg',
+                '_artsopolis-20250822-0001.jpg',
+                '_artsopolis-20250822-0002.jpg',
+                '_artsopolis-20250822-0003.jpg',
+                '_artsopolis-20250822-0004.jpg',
+                '_artsopolis-20250822-0006.jpg',
+                '_artsopolis-20250822-0007.jpg',
+                '_artsopolis-20250822-0008.jpg',
+                '_artsopolis-20250822-0010.jpg',
+                '_artsopolis-20250822-0011.jpg',
+                '_artsopolis-20250822-0012.jpg',
+                '_artsopolis-20250822-0013.jpg',
+                '_artsopolis-20250822-0014.jpg',
+                '_artsopolis-20250822-0015.jpg',
+                'ai-generated-8579796_640.png',
+                'aimchillin-20250820-0001.jpg',
+                'aimchillin-20250820-0002.jpg',
+                'aimchillin-20250820-0004.jpg',
+                'aimchillin-20250820-0005.jpg',
+                'aimchillin-20250820-0006.jpg',
+                'aimchillin-20250820-0007.jpg',
+                'aimchillin-20250820-0008.jpg',
+                'aimchillin-20250820-0009.jpg',
+                'aimchillin-20250820-0010.jpg',
+                'aimchillin-20250823-0004.jpg',
+                'aimchillin-20250915-0001.jpg',
+                'aimchillin-20250915-0002.jpg',
+                'aimchillin-20250915-0005.jpg',
+                'aimchillin-20250915-0006.jpg',
+                'aimchillin-20250915-0007.jpg',
+                'aimchillin-20250915-0008.jpg',
+                'aimchillin-20250915-0009.jpg',
+                'aimchillin-20250915-0010.jpg',
+                'aimchillin-20250920-0001.jpg',
+                'aimchillin-20250920-0002.jpg',
+                'aimchillin-20250920-0003.jpg',
+                'aimchillin-20250920-0004.jpg',
+                'aimchillin-20250920-0005.jpg',
+                'aimchillin-20250920-0006.jpg',
+                'aimchillin-20250920-0007.jpg',
+                'aimchillin-20250920-0008.jpg',
+                'aimchillin-20250920-0009.jpg',
+                'aimchillin-20250920-0010.jpg',
+                'aurkodev_photography-20250920-0001.jpg',
+                'aurkodev_photography-20250920-0002.jpg',
+                'aurkodev_photography-20250920-0003.jpg',
+                'aurkodev_photography-20250920-0004.jpg',
+                'aurkodev_photography-20250920-0005.jpg',
+                'aurkodev_photography-20250920-0006.jpg',
+                'aurkodev_photography-20250920-0007.jpg',
+                'aurkodev_photography-20250920-0008.jpg',
+                'aurkodev_photography-20250920-0009.jpg',
+                'aurkodev_photography-20250920-0010.jpg',
+                'aurkodev_photography-20250920-0011.jpg',
+                'aurkodev_photography-20250920-0012.jpg',
+                'aurkodev_photography-20250920-0013.jpg',
+                'black_hole10.jpg',
+                'black_hole4.jpg',
+                'black_hole5.jpg',
+                'black_hole6.jpg',
+                'black_hole7.jpg',
+                'black_hole8.jpg',
+                'black_hole9.jpg',
+                'chillgrid-20250820-0002.jpg',
+                'chillgrid-20250820-0003.jpg',
+                'chillgrid-20250820-0004.jpg',
+                'chillgrid-20250820-0005.jpg',
+                'chillgrid-20250820-0006.jpg',
+                'chillgrid-20250820-0007.jpg',
+                'chillgrid-20250820-0008.jpg',
+                'chillgrid-20250820-0009.jpg',
+                'chillgrid-20250820-0010.jpg',
+                'chillgrid-20250822-0001.jpg',
+                'chillgrid-20250822-0002.jpg',
+                'chillgrid-20250822-0003.jpg',
+                'chillgrid-20250822-0004.jpg',
+                'chillgrid-20250822-0005.jpg',
+                'chillgrid-20250822-0006.jpg',
+                'chillgrid-20250822-0007.jpg',
+                'chillgrid-20250822-0008.jpg',
+                'chillgrid-20250822-0009.jpg',
+                'chillgrid-20250822-0010.jpg',
+                'chillgrid-20250822-0011.jpg',
+                'chillgrid-20250822-0012.jpg',
+                'chillgrid-20250822-0013.jpg',
+                'chillgrid-20250822-0014.jpg',
+                'chillgrid-20250822-0015.jpg',
+                'chillgrid-20250822-0016.jpg',
+                'chillgrid-20250822-0017.jpg',
+                'chillgrid-20250822-0018.jpg',
+                'chillgrid-20250822-0019.jpg',
+                'chillgrid-20250822-0020.jpg',
+                'chillgrid-20250822-0021.jpg',
+                'chillgrid-20250822-0022.jpg',
+                'chillgrid-20250822-0023.jpg',
+                'chillgrid-20250822-0024.jpg',
+                'chillgrid-20250822-0025.jpg',
+                'chillgrid-20250822-0026.jpg',
+                'chillgrid-20250822-0027.jpg',
+                'chillgrid-20250822-0028.jpg',
+                'chillgrid-20250822-0029.jpg',
+                'd3.jpg',
+                'el_templario_hispano-20250915-0001.jpg.webp',
+                'image00014.jpg',
+                'image00016.jpg',
+                'image00030.jpg',
+                'inWXyXz.jpeg',
+                'jukkarisikko-20250920-0001.jpg (1).webp',
+                'jukkarisikko-20250920-0001.jpg (2).webp',
+                'jukkarisikko-20250920-0001.jpg (3).webp',
+                'jukkarisikko-20250920-0001.jpg (4).webp',
+                'jukkarisikko-20250920-0001.jpg (5).webp',
+                'jukkarisikko-20250920-0001.jpg (6).webp',
+                'jukkarisikko-20250920-0001.jpg (7).webp',
+                'jukkarisikko-20250920-0001.jpg (8).webp',
+                'jukkarisikko-20250920-0001.jpg (9).webp',
+                'jukkarisikko-20250920-0001.jpg.webp',
+                'vHbO5jR.jpg',
+                'y454cut93n121.png',
+            ]},
+        ];
+
+        let allImages = [];
+        let filteredImages = [];
+        let currentFilter = 'all';
+
+        // Initialisation
+        function init() {
+            // Préparer les données
+            allImages = wallpapers.flatMap(item => 
+                item.images.map(img => ({
+                    folder: item.folder,
+                    name: img,
+                    path: `../${item.folder}/${img}`
+                }))
+            );
+
+            // Si aucune image n'est trouvée, afficher un message
+            if (allImages.length === 0) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('noResults').style.display = 'block';
+                document.getElementById('noResults').innerHTML = `
+                    <p>⚠️ Configuration requise</p>
+                    <p style="font-size: 0.8em; margin-top: 20px;">
+                        Veuillez éditer le fichier HTML et remplir le tableau 'wallpapers' avec vos images.<br>
+                        Ou utilisez le script de génération automatique.
+                    </p>
+                `;
+                return;
+            }
+
+            filteredImages = [...allImages];
+            
+            // Créer les boutons de filtres
+            createFolderFilters();
+            
+            // Afficher la galerie
+            renderGallery();
+            
+            // Event listeners
+            document.getElementById('searchBox').addEventListener('input', handleSearch);
+            document.getElementById('modalClose').addEventListener('click', closeModal);
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Créer les boutons de filtres
+        function createFolderFilters() {
+            const folders = [...new Set(wallpapers.map(item => item.folder))];
+            const filterContainer = document.getElementById('folderFilter');
+            
+            folders.forEach(folder => {
+                const btn = document.createElement('button');
+                btn.className = 'folder-btn';
+                btn.textContent = folder.split('/').pop();
+                btn.dataset.folder = folder;
+                btn.addEventListener('click', () => handleFolderFilter(folder));
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        // Gérer les filtres par dossier
+        function handleFolderFilter(folder) {
+            currentFilter = folder;
+            
+            // Update active button
+            document.querySelectorAll('.folder-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.folder === folder || (folder === 'all' && btn.dataset.folder === 'all')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (folder === 'all') {
+                filteredImages = [...allImages];
+            } else {
+                filteredImages = allImages.filter(img => img.folder === folder);
+            }
+            
+            renderGallery();
+        }
+
+        // Gérer la recherche
+        function handleSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                if (currentFilter === 'all') {
+                    filteredImages = [...allImages];
+                } else {
+                    filteredImages = allImages.filter(img => img.folder === currentFilter);
+                }
+            } else {
+                const baseImages = currentFilter === 'all' ? allImages : allImages.filter(img => img.folder === currentFilter);
+                filteredImages = baseImages.filter(img => 
+                    img.name.toLowerCase().includes(searchTerm) || 
+                    img.folder.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            renderGallery();
+        }
+
+        // Afficher la galerie
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            const noResults = document.getElementById('noResults');
+            
+            if (filteredImages.length === 0) {
+                gallery.innerHTML = '';
+                noResults.style.display = 'block';
+                noResults.textContent = 'Aucun wallpaper trouvé';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            
+            gallery.innerHTML = filteredImages.map(img => `
+                <div class="gallery-item" onclick="openModal('${img.path}', '${img.name}', '${img.folder}')">
+                    <div class="image-container">
+                        <img src="${img.path}" alt="${img.name}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22%3E%3Crect fill=%22%23ddd%22 width=%22300%22 height=%22250%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage non trouvée%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="image-info">
+                        <div class="image-name">${img.name}</div>
+                        <div class="image-folder">📁 ${img.folder}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Ouvrir le modal
+        function openModal(path, name, folder) {
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            
+            modalImage.src = path;
+            modalInfo.innerHTML = `<strong>${name}</strong><br>📁 ${folder}`;
+            modal.classList.add('active');
+        }
+
+        // Fermer le modal
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Lancer l'initialisation
+        init();
+    </script>
+</body>
+</html>
